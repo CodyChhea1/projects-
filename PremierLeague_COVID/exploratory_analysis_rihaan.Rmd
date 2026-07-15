@@ -1,0 +1,124 @@
+## Exploratory Analysis
+
+```{r setup-eda, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(knitr)
+```
+
+```{r load-and-prepare-data}
+# Load the dataset using full path
+df <- read.csv("/Users/rihaanmodi/Desktop/UVA/premier_league_home_records.csv")
+
+# Calculate home win percentage for each team-season
+df <- df %>%
+  mutate(Home_Win_Pct = (Home_W / Home_GP) * 100)
+
+# Set factor levels for Group so they appear in chronological order
+df$Group <- factor(df$Group, levels = c("Pre-COVID", "COVID", "Post-COVID"))
+```
+
+### Numerical Summary 1: Mean and Standard Deviation of Home Win % by Group
+
+```{r numerical-summary-1}
+group_summary <- df %>%
+  group_by(Group) %>%
+  summarise(
+    N = n(),
+    Mean_Home_Win_Pct = round(mean(Home_Win_Pct), 2),
+    SD_Home_Win_Pct = round(sd(Home_Win_Pct), 2),
+    .groups = "drop"
+  )
+
+kable(group_summary,
+      col.names = c("Group", "N (team-seasons)", "Mean Home Win %", "SD Home Win %"),
+      caption = "Mean and Standard Deviation of Home Win Percentage by COVID Group")
+```
+
+The pre-COVID group (2016-17 through 2018-19) has the highest mean home win percentage at approximately 47.2%, with a standard deviation of 18.2%. During the COVID period (2019-20 and 2020-21), the mean drops to around 41.3% with a slightly lower SD of 15.7%, suggesting both a reduction in home advantage and less variability across teams. Post-COVID (2021-22 through 2023-24), the mean partially recovers to about 43.7%, though it does not fully return to pre-COVID levels.
+
+### Numerical Summary 2: Five-Number Summary of Home Win % by Season
+
+```{r numerical-summary-2}
+season_fivenum <- df %>%
+  group_by(Season) %>%
+  summarise(
+    Min = round(min(Home_Win_Pct), 1),
+    Q1 = round(quantile(Home_Win_Pct, 0.25), 1),
+    Median = round(median(Home_Win_Pct), 1),
+    Q3 = round(quantile(Home_Win_Pct, 0.75), 1),
+    Max = round(max(Home_Win_Pct), 1),
+    .groups = "drop"
+  )
+
+kable(season_fivenum,
+      col.names = c("Season", "Min", "Q1", "Median", "Q3", "Max"),
+      caption = "Five-Number Summary of Home Win Percentage by Season")
+```
+
+The five-number summaries reveal that the 2020-21 season — played almost entirely behind closed doors — has the lowest maximum home win percentage of any season in the study (68.4%), as well as a notably compressed interquartile range. This indicates that even the strongest home teams struggled without fan support. The median home win percentage is lowest in 2021-22 (36.8%), suggesting a lingering effect even as fans began returning. By 2022-23, the Q3 value rebounds to 59.2%, closer to pre-COVID levels.
+
+### Graphical Summary 1: Boxplot of Home Win % by COVID Group
+
+```{r boxplot, fig.width=8, fig.height=5, fig.cap="Distribution of Home Win Percentage Across Pre-COVID, COVID, and Post-COVID Periods"}
+ggplot(df, aes(x = Group, y = Home_Win_Pct, fill = Group)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = 21, outlier.size = 2) +
+  scale_fill_manual(values = c("Pre-COVID" = "#2196F3",
+                                "COVID" = "#F44336",
+                                "Post-COVID" = "#4CAF50")) +
+  labs(
+    title = "Home Win Percentage by COVID Period",
+    subtitle = "Premier League Seasons 2016-17 through 2023-24",
+    x = "Period",
+    y = "Home Win Percentage (%)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold"))
+```
+
+The boxplot shows a visible downward shift in both the median and overall distribution of home win percentages during the COVID period compared to the pre-COVID period. The COVID box is noticeably lower and more compressed, reflecting the reduced home advantage when fans were absent. The post-COVID distribution sits between the other two groups, with its median slightly below the pre-COVID median, hinting that home advantage may not have fully recovered even after fans returned.
+
+### Graphical Summary 2: Mean Home Win % Trend Over Seasons
+
+```{r lineplot, fig.width=10, fig.height=6, fig.cap="Mean Home Win Percentage Trend Across Premier League Seasons with COVID Period Highlighted"}
+# Calculate mean home win % per season with group info
+season_means <- df %>%
+  group_by(Season, Group) %>%
+  summarise(Mean_Home_Win_Pct = mean(Home_Win_Pct), .groups = "drop")
+
+# Order seasons chronologically
+season_order <- c("2016-17", "2017-18", "2018-19",
+                  "2019-20", "2020-21",
+                  "2021-22", "2022-23", "2023-24")
+season_means$Season <- factor(season_means$Season, levels = season_order)
+
+# Convert to numeric so the shaded rectangle works
+season_means$Season_num <- as.numeric(season_means$Season)
+
+ggplot(season_means, aes(x = Season_num, y = Mean_Home_Win_Pct)) +
+  geom_rect(data = data.frame(xmin = 3.5, xmax = 5.5, ymin = -Inf, ymax = Inf),
+            aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+            inherit.aes = FALSE, alpha = 0.15, fill = "red") +
+  annotate("text", x = 4.5, y = 52, label = "COVID\n(No/Limited Fans)",
+           size = 3.5, color = "red3", fontface = "italic") +
+  geom_line(color = "steelblue", linewidth = 1.2) +
+  geom_point(aes(color = Group), size = 4) +
+  scale_x_continuous(breaks = 1:8, labels = season_order) +
+  scale_color_manual(values = c("Pre-COVID" = "#2196F3",
+                                 "COVID" = "#F44336",
+                                 "Post-COVID" = "#4CAF50")) +
+  labs(
+    title = "Mean Home Win Percentage Across Premier League Seasons",
+    subtitle = "Shaded area indicates COVID-affected seasons (no/limited fans in attendance)",
+    x = "Season",
+    y = "Mean Home Win Percentage (%)",
+    color = "Period"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(face = "bold"))
+```
+
+The line plot reveals a clear dip in mean home win percentage during the COVID-affected seasons, with the lowest point occurring in 2020-21 — the season played almost entirely without fans. Home win percentages begin recovering in 2021-22 as fans returned, and by 2022-23 the mean approaches pre-COVID levels. However, the 2023-24 season shows that the recovery plateaus slightly below the highest pre-COVID seasons, suggesting a possible long-term shift in the league's competitive dynamics beyond just the fan factor.
+
+*Note: No hypothesis testing is conducted in this section; the analysis is purely exploratory and descriptive.*
