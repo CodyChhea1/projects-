@@ -1,0 +1,409 @@
+---
+title: "Diabetes Prevalance in Virginia" 
+author: "Cody Chhea, Hampus Storm, and Reyansh Girdhar"
+fontsize: 12pt
+geometry: margin=1in
+urlcolor: black
+output: pdf_document
+header-includes:
+- \usepackage{setspace}
+- \onehalfspacing
+- \usepackage{booktabs}
+- \usepackage{longtable}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, highlight=FALSE, comment=NA, warnings=FALSE,message=FALSE)
+library(tidyverse)
+```
+
+```{r, echo=FALSE, warning=FALSE,results=FALSE}
+df <- read.csv("va_diabetes.csv")
+
+
+
+
+
+
+```
+
+
+
+
+
+\newpage
+
+## Introduction
+
+1. Do Virginia counties with higher rates of physical inactivity have higher rates of adult diabetes prevalence?\
+2. Do Virginia counties with higher poverty levels have correspondingly higher rates of adult diabetes prevalence?\
+3. Do Virginia counties with a higher percentage of college-educated adults have a lower prevalence of Type 2 diabetes?
+
+
+
+## Data Summary
+
+The response variable, diabetes prevalence, is appropriate for multiple linear regression because it is quantitative, continuous, and measured as a percentage. The histogram of diabetes prevalence shows a roughly unimodal distribution with only slight right skewness. Most counties have diabetes prevalence between about 9% and 14%, with the center near 12%. The mean diabetes prevalence is 11.82%, the median is 12.0%, and the standard deviation is 1.93%. There are no major outliers or unusual gaps in the distribution, so no transformation of the response variable appears necessary.
+The strongest relationship in the exploratory analysis is between physical inactivity rate and diabetes prevalence. The scatterplot shows a very strong positive linear relationship: counties with higher inactivity rates tend to have substantially higher diabetes prevalence. Counties with inactivity rates near 15–20% generally have diabetes prevalence below 10%, while counties with inactivity rates above 30% usually have diabetes prevalence above 14%. The correlation between inactivity rate and diabetes prevalence is approximately 0.90, indicating that inactivity is likely to be one of the most important predictors in the final model.
+Obesity rate also has a strong positive relationship with diabetes prevalence. Counties with obesity rates below 30% generally have diabetes prevalence below 10%, while counties with obesity rates above 40% often have diabetes prevalence between 13% and 16%. The relationship appears approximately linear, and the correlation between obesity and diabetes prevalence is about 0.82. This suggests that obesity will likely be another important predictor in the final model.
+Median household income has a clear negative relationship with diabetes prevalence. Counties with lower median household income tend to have much higher diabetes prevalence, while wealthier counties generally have lower diabetes rates. Counties with median incomes below about $60,000 often have diabetes prevalence above 12%, whereas counties with incomes above $100,000 usually have diabetes prevalence below 11%. The correlation between median household income and diabetes prevalence is approximately -0.66.
+The percentage of adults with less than a high school education is also positively related to diabetes prevalence. Counties with lower educational attainment tend to have higher diabetes rates. Counties with less than 8% of adults lacking a high school education generally have diabetes prevalence near 9–11%, while counties above 15% often have diabetes prevalence above 13%. This supports the research question that counties with lower education levels experience greater diabetes prevalence.
+The boxplots for the categorical variables show additional patterns. Counties in the High Poverty category have the highest diabetes prevalence, followed by Medium Poverty and then Low Poverty counties. Counties with Low health insurance coverage also have higher diabetes prevalence than counties with Medium or High coverage. By contrast, the urban versus rural boxplot shows only a small difference between the two groups, with rural counties having slightly higher diabetes prevalence but substantial overlap with urban counties.
+The percentage of the population age 65 and older does not appear to have a strong relationship with diabetes prevalence. The scatterplot shows no clear linear trend, and counties with similar percentages of older adults often have very different diabetes rates. Because of this, age may not be an important predictor in the final model and may be removed during variable screening.
+The interaction plots suggest that some predictors may work together rather than independently. The interaction between poverty level and urban/rural status suggests that high poverty is associated with especially high diabetes prevalence in rural counties. The interaction between poverty level and health insurance coverage suggests that the effect of poverty is strongest in counties with low insurance coverage. Finally, the interaction between obesity rate and health insurance coverage indicates that counties with both high obesity and low insurance coverage tend to have the highest diabetes prevalence.
+The exploratory analysis also suggests that multicollinearity may be a concern. Inactivity rate, obesity rate, poverty, education, and income all appear to measure related aspects of disadvantage. Counties with high poverty often also have lower education, lower income, greater inactivity, and greater obesity. Because of this, several explanatory variables may be strongly correlated with one another, which could create unstable coefficient estimates in the regression model. To assess multicollinearity, we will examine a correlation matrix and variance inflation factors before fitting the final model. Variables that provide similar information may need to be removed through iterative variable screening.
+
+
+
+### Metadata Description
+
+### EDA Summary
+
+```{r, echo=FALSE, warning=FALSE,results=FALSE}
+## Use this code chunk can be used to execute any functions or summaries 
+## that will not be included in your output such as correlations or 5 number summaries
+
+
+
+```
+
+## Analysis and Results
+
+To begin the modeling process, all the quantitative predictors were first included in a multiple linear regression model predicting diabetes prevalence. The quantitative variables considered were inactivity rate, obesity rate, square root transformed median household income, percent age 65 and older, and percent with less than high school education. A square root transformation of median household income was applied because the relationship between income and diabetes prevalence appeared slightly curved in the exploratory analysis. After fitting the full quantitative model, significance test and variance inflation factors (VIFs) were examined. Percent with less than a high school education and square root transformed income were not statistically significant after doing the global F test, accounting for the other predictors and were removed. The final quantitative model retained inactivity rate, obesity rate, and percentage 65 and older as predictors.	
+
+Next we looked at the qualitative predictors in a separate model. The initial qualitative model included urban/rural classification, poverty level, and health insurance coverage. Urban/rural status was not statistically significant and was removed. A nested F test (ANOVA) then compared a model containing only poverty level to one that also included health insurance coverage. Removing the health insurance coverage did not significantly reduce model fit, so poverty level alone was retained as the single qualitative predictor.
+
+The significant quantitative predictors (inactivity rate, obesity rate, and percent age 65 and older) were combined with poverty level to form the combined main effects model. In this additive model, inactivity rate and obesity rate both had positive and statistically significant coefficients, indicating that counties with higher rate of physical inactivity and obesity tend to have higher diabetes prevalence. Percentage 65 and older had a significant negative coefficient, suggesting that counties with larger elderly populations tended to have slightly lower diabetes prevalence controlling for the other predictors. Poverty level was not statistically significant as a main effect but was retained as sole quantitative predictor and because interaction effects were expected. The combined main-effects model explained a large proportion of variation in diabetes prevalence, with an adjusted -squared of 0.882.
+
+Because the explanatory analysis suggested that the effect of obesity on diabetes prevalence might differ across poverty categories, an interaction between obesity rate and poverty level was tested. A Nested F-test comparing the additive model to the interaction model produced F = 8.91 with p = 0.00024, indicating that the interaction significantly improved model fit. The interaction coefficient for obesity rate and low-poverty counties was statistically significant and negative, meaning the positive relationship between obesity and diabetes prevalence was weaker in low-poverty counties than in high-poverty counties. The interaction coefficient for medium-poverty counties was not significant. Therefore, the interaction between obesity rate and poverty level was retained in the final model.
+
+A second interaction between health insurance coverage and poverty level was also considered, motivated by the possibility that insurance effects might vary by poverty group. A model including both interactions was compared to the one interaction model; however, the addition of the health insurance coverage by poverty level interaction did not significantly improve the model (F = 1.45, p= 0,201) and none of its individual coefficients were significant. This interaction therefore excluded from the final model
+
+Multicollinearity was assessed using variance inflation factors twice. The first time it was tested was with a model of only quantitative variables. The quantitative predictors had relatively small VIF values, indicating that multicollinearity among them was not severe. However, when testing with the qualitative variables, poverty level and the obesity by poverty interaction had moderately large generalized VIF values as is expected when interaction terms are included because interactions terms are naturally correlated with the variables used to construct them. Since the interaction significantly improved model fit, it was retained despite this inflation. 
+
+Residual diagnostic plots were examined to assess whether the linear regression assumptions were reasonably satisfied. In our first residual analysis, which was done after our first test for multicolinearity (which only had quantitative variables), there were no clear trends that could be modeled in the residual plots, so the lack of fit assumption was not violated. The residual versus fitted values plot showed only a slightly curved pattern, suggesting minor nonlinearity but no serious departure from linearity. There were no clear fanning patterns in the residual plots nor the residual vs predicted plots. The residual versus fitted values plot showed only a slightly curved pattern, suggesting minor nonlinearity but no serious departure from linearity. The normal Q-Q plot indicated that residuals were approximately normally distributed, with only small deviations in the tails. Overall, the regression assumptions appeared to be reasonably satisfied. On the second residual analysis, after having both quantitative and qualitative variables, the same assumptions stayed the same. 
+
+
+Cook's distance was used to identify potential influential observations. Several counties had somewhat larger Cook’s distance values, including observations 29, 40, 51, 60, 64, 93, 99, 103, 104, 105, 110, 121, and 125. However, none appeared influential enough to justify removal and there was no evidence of data entry errors.  Therefore all observations were retained in the final model.
+
+Predictive performance was evaluated using PRESS statistics. THe additive model had a PRESS value of 50.53, while the interaction model had a PRESS value of 49.95, indicating better predictive ability. Together with the larger adjusted R-squared of 0.895 and smaller residual standard error of 0.615, this provided additional evidence that the interaction model offered the best fit and predictive performance. Therefore, the interaction model was selected as the final model for interpretation and conclusions.
+
+We decided to go with the model that included the interaction between obesity_rate and  poverty_level, inactivity_rate, and pct_65_over. Having an adjusted R squared of 0.8954, satisfying the global F tests/nested F tests, and R^2 of 0.901.
+
+
+## Conclusions
+
+\newpage
+
+## Appendix A: Data Dictionary
+
+```{r data-dictionary, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+
+data_dict <- data.frame(
+  Variable = c("Adult Diabetes Prevalence", "Inactivity Rate", "Median Household Income",
+               "Populatix`x`on 65 and Over", "Obesity Rate", "Less Than HS Education",
+               "Urban/Rural Status", "Health Insurance Coverage", "Poverty Level"),
+  Abbreviated = c("diabetes_prevalence", "inactivity_rate", "median_household_income",
+                  "pct_65_over", "obesity_rate", "pct_less_than_hs",
+                  "urban_rural", "health_insurance_coverage", "poverty_level"),
+  Description = c(
+    "Percentage of adults in the county diagnosed with diabetes. This is the response variable.",
+    "Percentage of adults who report no leisure-time physical activity.",
+    "The median yearly household income in the county, measured in dollars.",
+    "Percentage of the county population aged 65 or older.",
+    "Percentage of adults classified as obese (BMI of 30 or higher).",
+    "Percentage of adults aged 25 and older with less than a high school diploma.",
+    "Urban (less than 50% rural residents, 54 counties) or Rural (50% or more rural residents, 79 counties).",
+    "High: 0-7% uninsured (52 counties); Medium: 7-9% uninsured (52 counties); Low: greater than 9% uninsured (29 counties).",
+    "Low Poverty: 0-9.5% (44 counties); Medium Poverty: 9.5-15.1% (45 counties); High Poverty: greater than 15.1% (44 counties)."
+  ),
+  stringsAsFactors = FALSE
+)
+
+kable(data_dict, booktabs = TRUE, longtable = TRUE,
+      col.names = c("Variable Name", "Abbreviated Name", "Description")) %>%
+  kable_styling(latex_options = c("hold_position", "repeat_header"),
+                font_size = 8, full_width = TRUE) %>%
+  column_spec(1, width = "3.5cm") %>%
+  column_spec(2, width = "4cm") %>%
+  column_spec(3, width = "8.5cm")
+```
+\newpage
+
+## Appendix B: Data Rows
+
+```{r, echo=FALSE}
+# Use head() function to output first several rows
+head(df)
+
+```
+
+\newpage
+
+### Appendix C: Exploratory Data Analysis
+
+```{r, echo=FALSE}
+hist(df$diabetes_prevalence, xlab="Diabetes Prevalence", main="Histogram of Diabetes Prevalence")
+plot(df$inactivity_rate, df$diabetes_prevalence, xlab="Inactivity Rate", ylab="Diabetes Prevalence", main="Diabetes Prevalence vs Inactivity Rate")
+plot(sqrt(df$median_household_income), df$diabetes_prevalence, xlab="Median Household Income", ylab="Diabetes Prevalence", main="Diabetes Prevalence vs Median Household Income")
+plot(df$pct_65_over, df$diabetes_prevalence, xlab="% Population 65 and Over", ylab="Diabetes Prevalence", main="Diabetes Prevalence vs % Population 65 and Over")
+plot(df$obesity_rate, df$diabetes_prevalence, xlab="Obesity Rate", ylab="Diabetes Prevalence", main="Diabetes Prevalence vs Obesity Rate")
+plot(df$pct_less_than_hs, df$diabetes_prevalence, xlab="% Less than high school education", ylab="Diabetes Prevalence", main="Diabetes Prevalence vs % Less than HS Educated")
+boxplot(df$diabetes_prevalence ~ df$urban_rural, xlab="Urban/Rural", ylab="Diabetes Prevalence", main="Diabetes Prevalence by Urban/Rural Status")
+boxplot(df$diabetes_prevalence ~ df$health_insurance_coverage, xlab="Health Insurance Coverage", ylab="Diabetes Prevalence", main="Diabetes Prevalence by Health Insurance Coverage")
+boxplot(df$obesity_rate ~ df$poverty_level, xlab="Health Insurance Coverage", ylab="Diabetes Prevalence", main="Diabetes Prevalence by Poverty Level")
+interaction.plot(df$urban_rural, df$poverty_level, df$diabetes_prevalence, xlab="Urban/Rural", ylab="Diabetes Prevalence", main="Interaction Plot of Diabetes Prevalence by Urban/Rural and Poverty Level")
+interaction.plot(df$health_insurance_coverage, df$poverty_level, df$diabetes_prevalence, xlab="Health Insurance Coverage", ylab="Diabetes Prevalence", main="Interaction Plot of Diabetes Prevalence by Health Insurance Coverage and Poverty Level")
+
+plot(x=df$obesity_rate, y=df$diabetes_prevalence,pch=as.numeric(factor(df$health_insurance_coverage)),xlab="obesity rate",ylab="diabetes prevalance", main = "Diabetes Prevalence vs Obesity Rate by Health Insurance Coverage")
+legend("topright",legend = levels(factor(df$health_insurance_coverage)),
+       pch = 1:nlevels(factor(df$health_insurance_coverage)))
+
+plot(x = df$obesity_rate, 
+     y = df$diabetes_prevalence,
+     pch = as.numeric(factor(df$poverty_level)), 
+     xlab = "Obesity Rate",
+     ylab = "Diabetes Prevalence", 
+     main = "Diabetes Prevalence vs Obesity Rate by Poverty Level")
+
+legend("topright",
+       legend = levels(factor(df$poverty_level)),
+       pch = 1:nlevels(factor(df$poverty_level)))
+
+# This partition is optional, but can be useful for a simple way to resize your plots
+par(mfrow=c(2,3),pin=c(1,1),mar=c(7.1,4.1,3,1))
+
+plot(df$pct_65_over, df$diabetes_prevalence)
+plot((df$pct_65_over)^2, df$diabetes_prevalence )
+cor(df$pct_65_over, df$diabetes_prevalence)
+cor((df$pct_65_over)^2, df$diabetes_prevalence)
+```
+
+\newpage
+
+## Appendix D: Final Model Output and Plots
+```{r, echo=TRUE, warning=FALSE,results=FALSE}
+
+
+final_model <- lm(diabetes_prevalence ~ obesity_rate * poverty_level +
+                           inactivity_rate + pct_65_over,
+                         data = df)
+
+summary(final_model)
+```
+
+```{r, echo=FALSE, warning=FALSE,results=FALSE}
+## This code chunk can be used to execute any functions or summaries that will not be included in your output
+library(car)
+library(Hmisc)
+library(olsrr)
+
+
+
+df$obesity_rate_sq <- df$obesity_rate ^ 2
+df$sqrt_income <- sqrt(df$median_household_income)
+df$inactivity_rate_sq <- df$inactivity_rate ^ 2
+df$pct_65_over_sq <- df$pct_65_over ^ 2
+
+
+# Full model
+full_model <- lm(diabetes_prevalence ~ inactivity_rate +
+                   obesity_rate_sq +
+                   median_household_income +
+                   pct_65_over_sq +
+                   pct_less_than_hs +
+                   urban_rural +
+                   health_insurance_coverage +
+                   poverty_level,
+                 data = df)
+
+quant_model <- lm(diabetes_prevalence ~ inactivity_rate_sq +
+                   obesity_rate_sq +
+                   sqrt_income +
+                   pct_65_over_sq +
+                   pct_less_than_hs,
+                 data = df)
+
+summary(quant_model)
+
+quant_modelvif <- round(vif(quant_model), 3)
+quant_modelvif
+mean(quant_modelvif)
+
+ols_step_both_p(quant_model,p_rem = 0.15, details = TRUE)
+
+final_quant_model <- lm(diabetes_prevalence ~ inactivity_rate_sq + pct_65_over_sq + obesity_rate_sq, data = df)
+summary(final_quant_model) 
+vif_final_quant_model <- round(vif(final_quant_model), 3)
+vif_final_quant_model
+mean(vif_final_quant_model)
+
+#there is a strong concern between diabetes_preva
+
+#vif
+#global t test
+#indiv t test 
+
+
+qual_model <- lm(diabetes_prevalence ~ urban_rural + poverty_level + health_insurance_coverage, data = df)
+summary(qual_model)
+
+
+### Removing urban_rural
+
+qual_model2 <- lm(diabetes_prevalence ~ poverty_level +
+                    health_insurance_coverage,
+                  data = df)
+
+summary(qual_model2)
+anova(qual_model2, qual_model)
+
+### Removing health_insurance_coverage
+
+qual_model3 <- lm(diabetes_prevalence ~ poverty_level,
+                  data = df)
+
+summary(qual_model3)
+anova(qual_model3, qual_model2)
+
+### Final Model
+
+qual_final <- lm(diabetes_prevalence ~ poverty_level, data = df)
+summary(qual_final)
+
+### Interaction Model 1: obesity rate and poverty level
+
+interaction_model1 <- lm(diabetes_prevalence ~ obesity_rate_sq * poverty_level + obesity_rate * poverty_level + inactivity_rate_sq + inactivity_rate + pct_65_over, data = df)
+
+summary(interaction_model1)
+
+### Interaction Model 2: obesity rate and poverty level, health insurance coverage and poverty level
+
+interaction_model2 <- lm(diabetes_prevalence ~ obesity_rate_sq * poverty_level + obesity_rate * poverty_level + health_insurance_coverage * poverty_level + inactivity_rate_sq + pct_65_over,
+                         data = df)
+# I(obesity)
+anova(interaction_model1, interaction_model2)
+
+### P-value from anova(interaction_model, interaction_model2) was 0.18, which is greater than 0.05, so we fail to reject the null hypothesis that the more complex interaction model does not provide a significantly better fit than the simpler interaction model. This suggests that the additional interaction between health insurance coverage and poverty level is not statistically significant and does not improve the model fit enough to justify its inclusion.
+
+
+### Final Model without Interaction
+
+final_model <- lm(diabetes_prevalence ~ inactivity_rate_sq +
+                    obesity_rate_sq +
+                    pct_65_over +
+                    poverty_level,
+                  data = df)
+
+summary(final_model)
+
+### Anova comparison between final model without interaction and interaction model with obesity rate and poverty levels
+
+anova(final_model, interaction_model1)
+
+### P-value from anova(final_model, interaction_model) was 0.02, which is less than 0.05, so we reject the null hypothesis that the interaction model does not provide a significantly better fit than the final model without interaction. This suggests that the interaction between obesity rate and poverty level is statistically significant and should be included in the final model.
+
+
+### Interaction Plot for obesity rate and poverty level
+
+library(ggplot2)
+
+ggplot(df, aes(x = obesity_rate, y = diabetes_prevalence,
+               color = poverty_level)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Interaction Between Obesity Rate and Poverty Level",
+       x = "Obesity Rate (%)",
+       y = "Diabetes Prevalence (%)")
+
+### Moving on to the other steps.
+
+library(car)
+
+residualPlots(interaction_model1, tests = F)
+plot(interaction_model1, which = c(1,2))
+hist(residuals(interaction_model1))
+
+n <- nrow(df)
+p <- length(coef(interaction_model1))
+
+# Leverage threshold = 2p/n
+which(hatvalues(interaction_model1) > 2 * p / n)
+
+# Cook's Distance threshold = 4/n
+which(cooks.distance(interaction_model1) > 4 / n)
+
+# Deleted Studentized Residuals threshold = +/-2
+which(abs(rstudent(interaction_model1)) > 2)
+
+# Observations exceeding ALL three simultaneously
+which(
+  hatvalues(interaction_model1) > 2 * p / n &
+  cooks.distance(interaction_model1) > 4 / n &
+  abs(rstudent(interaction_model1)) > 2
+)
+
+plot(interaction_model1,which=4)
+influencePlot(interaction_model1, fill=F)
+ols_plot_resid_stud_fit(interaction_model1)
+
+### Predicted Residual Error Sum of Squares (PRESS) statistic for the interaction model
+
+press_final <- sum((residuals(final_model) / (1 - hatvalues(final_model)))^2)
+press_interaction <- sum((residuals(interaction_model1) / (1 - hatvalues(interaction_model1)))^2)
+
+press_final
+press_interaction
+
+#^2 transformation of inactivtity rate 
+###
+
+#make sure to test interaction between obesity rate and poverty, and health insurance and poverty level 
+
+```
+
+```{r, echo=FALSE}
+## Use this section to output the summary of your final model
+## Include the relevant plots from assumptions and your additional techniques
+## This should NOT be a dump of all of your plots and outputs.
+## Refer to the Rmarkdown guide for sizing information on your plots
+```
+
+\newpage
+
+## Appendix E: References
+
+Centers for Disease Control and Prevention. (n.d.). PLACES: Local data for better health — County data 2023. U.S. Department of Health and Human Services. https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-County-Data-20/swc5-untb
+
+Centers for Disease Control and Prevention. (n.d.). PLACES: County view. U.S. Department of Health and Human Services. https://places.cdc.gov/?view=county
+Data Commons. (n.d.). Median household income — Virginia. Google. https://datacommons.org/explore?#q=median%20income%20household%20virginia
+
+National Institutes of Health, National Institute on Minority Health and Health Disparities. (n.d.). HD Pulse: Poverty data — Virginia counties. U.S. Department of Health and Human Services. https://hdpulse.nimhd.nih.gov/data-portal/social/table?age=001&age_options=ageall_1&demo=00008&demo_options=poverty_3&race=00&race_options=race_7&sex=0&sex_options=sexboth_1&socialtopic=080&socialtopic_options=social_6&statefips=51&statefips_options=area_states
+
+National Institutes of Health, National Institute on Minority Health and Health Disparities. (n.d.). HD Pulse: Educational attainment data — Virginia counties. U.S. Department of Health and Human Services. https://hdpulse.nimhd.nih.gov/data-portal/social/table?age=081&age_options=age25_1&demo=00005&demo_options=education_3&race=00&race_options=race_7&sex=0&sex_options=sexboth_1&socialtopic=020&socialtopic_options=social_6&statefips=51&statefips_options=area_states
+
+University of Wisconsin Population Health Institute. (2023). County health rankings: Adults 65 and older — Virginia. County Health Rankings & Roadmaps. https://www.countyhealthrankings.org/health-data/community-conditions/demographics/demographics/65-and-older?state=51&year=2023
+
+University of Wisconsin Population Health Institute. (2023). County health rankings: Rural population — Virginia. County Health Rankings & Roadmaps. https://www.countyhealthrankings.org/health-data/community-conditions/demographics/demographics/rural?state=51&year=2023
+```{r}
+plot(df$inactivity_rate,df$diabetes_prevalence)
+cor(df$inactivity_rate,df$diabetes_prevalence)
+```
+
+```{r}
+interaction_model1 <- lm(diabetes_prevalence ~ obesity_rate + I(obesity_rate^2) + poverty_level +
+                           inactivity_rate + pct_65_over,
+                         data = df)
+
+summary(interaction_model1)
+```
+
+
+
+### Background
+
+### Data Sources
+
+### Additional Help
